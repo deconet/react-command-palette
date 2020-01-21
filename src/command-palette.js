@@ -1,54 +1,54 @@
 /* eslint-disable react/jsx-no-bind */
-import React from "react";
-import ReactModal from "react-modal";
-import PropTypes from "prop-types";
+import React from 'react'
+import ReactModal from 'react-modal'
+import PropTypes from 'prop-types'
 
 // third party libs
-import equal from "fast-deep-equal";
-import Autosuggest from "react-autosuggest";
-import Mousetrap from "mousetrap";
+import equal from 'fast-deep-equal'
+import Autosuggest from 'react-autosuggest'
+import Mousetrap from 'mousetrap'
 
 // command palette modules
-import fuzzysortOptions from "./fuzzysort-options";
-import PaletteSpinner from "./palette-spinner";
-import RenderCommand from "./render-command";
-import PaletteTrigger from "./palette-trigger";
-import getSuggestions from "./suggestions";
-import defaultTheme from "../themes/theme";
+import fuzzysortOptions from './fuzzysort-options'
+import PaletteSpinner from './palette-spinner'
+import RenderCommand from './render-command'
+import PaletteTrigger from './palette-trigger'
+import getSuggestions from './suggestions'
+import defaultTheme from '../themes/theme'
 
-import "../themes/atom.css";
+import '../themes/atom.css'
 
-const noop = () => undefined;
+const noop = () => undefined
 
 // Apply a functions that'll run after the command's function runs
 // Monkey patching for the commands
 // http://me.dt.in.th/page/JavaScript-override/
-function override(object, methodName, callback) {
-  const dupe = object;
-  dupe[methodName] = callback(object[methodName]);
+function override (object, methodName, callback) {
+  const dupe = object
+  dupe[methodName] = callback(object[methodName])
 }
 
-function after(extraBehavior) {
-  return function(original, ...args) {
-    return function() {
-      const returnValue = original.apply(this, args);
-      extraBehavior.apply(this, args);
-      return returnValue;
-    };
-  };
+function after (extraBehavior) {
+  return function (original, ...args) {
+    return function () {
+      const returnValue = original.apply(this, args)
+      extraBehavior.apply(this, args)
+      return returnValue
+    }
+  }
 }
 
-const allSuggestions = [];
+const allSuggestions = []
 
 // When suggestion is clicked, Autosuggest needs to populate the input element
 // based on the clicked suggestion. Teach Autosuggest how to calculate the
 // input value for every given suggestion.
-const getSuggestionValue = suggestion => suggestion.name;
+const getSuggestionValue = suggestion => suggestion.name
 
 const Header = props => {
-  const { theme, children } = props;
-  return <div className={theme.header}>{children}</div>;
-};
+  const { theme, children } = props
+  return <div className={theme.header}>{children}</div>
+}
 
 Header.propTypes = {
   theme: PropTypes.object,
@@ -56,13 +56,13 @@ Header.propTypes = {
     PropTypes.arrayOf(PropTypes.node),
     PropTypes.node
   ])
-};
+}
 
 class CommandPalette extends React.Component {
-  constructor(props) {
-    super(props);
+  constructor (props) {
+    super(props)
 
-    const { defaultInputValue } = this.props;
+    const { defaultInputValue } = this.props
 
     // Autosuggest is a controlled component.
     // This means that you need to provide an input value
@@ -74,109 +74,118 @@ class CommandPalette extends React.Component {
       showModal: false,
       value: defaultInputValue,
       suggestions: allSuggestions
-    };
+    }
 
-    this.onChange = this.onChange.bind(this);
-    this.onSelect = this.onSelect.bind(this);
+    this.onChange = this.onChange.bind(this)
+    this.onSelect = this.onSelect.bind(this)
 
     // eslint-disable-next-line prettier/prettier
-    this.onSuggestionsFetchRequested = this.onSuggestionsFetchRequested.bind(this);
+    this.onSuggestionsFetchRequested = this.onSuggestionsFetchRequested.bind(this)
     this.onSuggestionsClearRequested = this.onSuggestionsClearRequested.bind(
       this
-    );
-    this.onSuggestionSelected = this.onSuggestionSelected.bind(this);
-    this.afterOpenModal = this.afterOpenModal.bind(this);
-    this.handleOpenModal = this.handleOpenModal.bind(this);
-    this.handleCloseModal = this.handleCloseModal.bind(this);
-    this.commandTemplate = this.commandTemplate.bind(this);
-    this.renderModalCommandPalette = this.renderModalCommandPalette.bind(this);
+    )
+    this.onSuggestionSelected = this.onSuggestionSelected.bind(this)
+    this.afterOpenModal = this.afterOpenModal.bind(this)
+    this.handleOpenModal = this.handleOpenModal.bind(this)
+    this.handleCloseModal = this.handleCloseModal.bind(this)
+    this.commandTemplate = this.commandTemplate.bind(this)
+    this.renderModalCommandPalette = this.renderModalCommandPalette.bind(this)
     this.renderInlineCommandPalette = this.renderInlineCommandPalette.bind(
       this
-    );
-    this.fetchData = this.fetchData.bind(this);
+    )
+    this.fetchData = this.fetchData.bind(this)
 
-    this.commandPaletteInput = React.createRef();
-    this.focusInput = this.focusInput.bind(this);
+    this.commandPaletteInput = React.createRef()
+    this.focusInput = this.focusInput.bind(this)
   }
 
-  componentDidMount() {
-    const { hotKeys, open, display } = this.props;
+  componentDidMount () {
+    const { hotKeys, open, display } = this.props
 
     this.setState({
       suggestions: this.fetchData()
-    });
+    })
 
     // Use hot key to open command palette
     Mousetrap.bind(hotKeys, () => {
-      this.handleOpenModal();
+      this.handleOpenModal()
       // prevent default which opens Chrome dev tools command palatte
-      return false;
-    });
+      return false
+    })
 
-    if (open) return this.handleOpenModal();
+    if (open) return this.handleOpenModal()
 
     // because there's no modal when using inline the input should be focused
-    if (display === "inline") return this.focusInput();
-    return true;
+    if (display === 'inline') return this.focusInput()
+    return true
   }
 
-  componentDidUpdate(prevProps) {
-    const { commands } = this.props;
+  componentDidUpdate (prevProps) {
+    const { commands } = this.props
     if (!equal(prevProps.commands, commands)) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({
         suggestions: this.fetchData()
-      });
+      })
     }
   }
 
-  onChange(event, { newValue }) {
-    const { onChange } = this.props;
+  onChange (event, { newValue }) {
+    const { onChange, onEnterPressed } = this.props
+    console.log('onchange')
     this.setState({
       value: newValue
-    });
-    return onChange(newValue, this.getInputOnTextTyped(event, newValue));
+    })
+    if (event) {
+      const { key, type } = event
+
+      if (key === 'Enter') {
+        return onEnterPressed(newValue, this.getInputOnTextTyped(event, newValue))
+      }
+    }
+
+    return onChange(newValue, this.getInputOnTextTyped(event, newValue))
   }
 
-  onSelect(suggestion = null) {
-    const { onSelect } = this.props;
-    return onSelect(suggestion);
+  onSelect (suggestion = null) {
+    const { onSelect } = this.props
+    return onSelect(suggestion)
   }
 
-  onSuggestionSelected(event, { suggestion }) {
-    if (typeof suggestion.command === "function") {
+  onSuggestionSelected (event, { suggestion }) {
+    if (typeof suggestion.command === 'function') {
       // after the command executes display a spinner
       override(
         suggestion,
-        "command",
+        'command',
         after(() => {
           // fire onSelect event
-          this.onSelect(suggestion);
+          this.onSelect(suggestion)
           // close the command palette if prop is set
-          const { closeOnSelect, display } = this.props;
-          if (closeOnSelect && display === "modal") {
-            this.handleCloseModal();
+          const { closeOnSelect, display } = this.props
+          if (closeOnSelect && display === 'modal') {
+            this.handleCloseModal()
           } else {
             // otherwise show the loading spinner
-            this.setState({ isLoading: true });
+            this.setState({ isLoading: true })
           }
         })
-      );
-      return suggestion.command();
+      )
+      return suggestion.command()
     }
-    throw new Error("command must be a function");
+    throw new Error('command must be a function')
   }
 
   // Autosuggest will call this function every time you need to update suggestions.
   // You already implemented this logic above, so just use it.
-  onSuggestionsFetchRequested({ value }) {
-    const { options } = this.props;
+  onSuggestionsFetchRequested ({ value }) {
+    const { options } = this.props
     this.setState({
       suggestions: getSuggestions(value, this.allCommands, options)
-    });
+    })
   }
 
-  onSuggestionsClearRequested() {
+  onSuggestionsClearRequested () {
     // when using the onSuggestionsClearRequested property, it overrides
     // alwaysRenderSuggestions which I think is counter intuitive, as always should mean
     // always, see: https://github.com/moroshko/react-autosuggest/issues/521
@@ -184,96 +193,104 @@ class CommandPalette extends React.Component {
     // this.setState({
     //   suggestions: []
     // });
-    return true;
+    return true
   }
 
   // returns user typed queries only
   // wont return selections or keyboard navigation
   // just input
-  getInputOnTextTyped(event, newValue) {
-    const { key, type } = event;
-    if (
-      key !== "ArrowUp" &&
-      key !== "ArrowDown" &&
-      key !== "Enter" &&
-      type !== "click"
-    ) {
-      return newValue;
+  getInputOnTextTyped (event, newValue) {
+    if (!event) {
+      return null
     }
-    return null;
+
+    const { key, type } = event
+    if (
+      key !== 'ArrowUp' &&
+      key !== 'ArrowDown' &&
+      key !== 'Enter' &&
+      type !== 'click'
+    ) {
+      return newValue
+    }
+    return null
   }
 
-  afterOpenModal() {
-    const { onAfterOpen } = this.props;
-    this.focusInput();
-    return onAfterOpen();
+  afterOpenModal () {
+    const { onAfterOpen } = this.props
+    this.focusInput()
+    return onAfterOpen()
   }
 
-  fetchData() {
-    const { commands, maxDisplayed } = this.props;
+  fetchData () {
+    const { commands, maxDisplayed } = this.props
     if (maxDisplayed > 500) {
       throw new Error(
-        "Display is limited to a maximum of 500 items to prevent performance issues"
-      );
+        'Display is limited to a maximum of 500 items to prevent performance issues'
+      )
     }
 
-    this.allCommands = commands;
-    return this.allCommands;
+    this.allCommands = commands
+    return this.allCommands
   }
 
-  focusInput() {
-    this.commandPaletteInput.input.focus();
+  focusInput () {
+    this.commandPaletteInput.input.focus()
     // FIXME: apply "esc" on the modal instead of input
     // so that pressing esc on loading spinner works too
-    const { hotKeys } = this.props;
+    const { hotKeys, onEnterPressed } = this.props
     Mousetrap(this.commandPaletteInput.input).bind(
-      ["esc"].concat(hotKeys),
+      ['esc'].concat(hotKeys),
       () => {
-        this.handleCloseModal();
-        return false;
+        this.handleCloseModal()
+        return false
       }
-    );
+    )
+    Mousetrap(this.commandPaletteInput.input).bind(['enter'], () => {
+      console.log('mousetrap hit')
+      onEnterPressed(this.state.value)
+    })
   }
 
-  handleCloseModal() {
-    const { resetInputOnClose, defaultInputValue, onRequestClose } = this.props;
-    const { value } = this.state;
+  handleCloseModal () {
+    const { resetInputOnClose, defaultInputValue, onRequestClose } = this.props
+    const { value } = this.state
 
     this.setState({
       showModal: false,
       isLoading: false,
       value: resetInputOnClose ? defaultInputValue : value
-    });
+    })
 
-    return onRequestClose();
+    return onRequestClose()
   }
 
-  handleOpenModal() {
+  handleOpenModal () {
     this.setState({
       showModal: true,
       suggestions: allSuggestions
-    });
+    })
   }
 
   // Autosuggest will pass through all these props to the input element.
-  defaultInputProps(value) {
-    const { placeholder } = this.props;
+  defaultInputProps (value) {
+    const { placeholder } = this.props
     return {
       placeholder,
       value,
       onChange: this.onChange,
       onKeyDown: this.onKeyDown
-    };
+    }
   }
 
-  commandTemplate(suggestion) {
-    return <RenderCommand {...this.props} suggestion={suggestion} />;
+  commandTemplate (suggestion) {
+    return <RenderCommand {...this.props} suggestion={suggestion} />
   }
 
   // eslint-disable-next-line react/sort-comp
-  renderAutoSuggest() {
-    const { suggestions, value, isLoading } = this.state;
-    const { theme } = this.props;
+  renderAutoSuggest () {
+    const { suggestions, value, isLoading } = this.state
+    const { theme } = this.props
     const {
       maxDisplayed,
       spinner,
@@ -281,7 +298,7 @@ class CommandPalette extends React.Component {
       display,
       header,
       alwaysRenderCommands
-    } = this.props;
+    } = this.props
     if (isLoading && showSpinnerOnSelect) {
       return (
         <PaletteSpinner
@@ -289,7 +306,7 @@ class CommandPalette extends React.Component {
           display={display}
           theme={theme.spinner}
         />
-      );
+      )
     }
 
     return (
@@ -297,7 +314,7 @@ class CommandPalette extends React.Component {
         <Header theme={theme}>{header}</Header>
         <Autosuggest
           ref={input => {
-            this.commandPaletteInput = input;
+            this.commandPaletteInput = input
           }}
           alwaysRenderSuggestions={alwaysRenderCommands}
           suggestions={suggestions.slice(0, maxDisplayed)}
@@ -311,14 +328,14 @@ class CommandPalette extends React.Component {
           theme={theme}
         />
       </div>
-    );
+    )
   }
 
-  renderModalCommandPalette() {
-    const { showModal } = this.state;
-    const { trigger, theme, reactModalParentSelector } = this.props;
+  renderModalCommandPalette () {
+    const { showModal } = this.state
+    const { trigger, theme, reactModalParentSelector } = this.props
     return (
-      <div className="react-command-palette">
+      <div className='react-command-palette'>
         <PaletteTrigger
           onClick={this.handleOpenModal}
           trigger={trigger}
@@ -328,13 +345,12 @@ class CommandPalette extends React.Component {
           appElement={document.body}
           isOpen={showModal}
           parentSelector={() =>
-            document.querySelector(reactModalParentSelector)
-          }
+            document.querySelector(reactModalParentSelector)}
           onAfterOpen={this.afterOpenModal}
           onRequestClose={this.handleCloseModal}
           className={theme.modal}
           overlayClassName={theme.overlay}
-          contentLabel="Command Palette"
+          contentLabel='Command Palette'
           closeTimeoutMS={
             1
             /* otherwise the modal is not closed when
@@ -344,32 +360,32 @@ class CommandPalette extends React.Component {
           {this.renderAutoSuggest()}
         </ReactModal>
       </div>
-    );
+    )
   }
 
-  renderInlineCommandPalette() {
+  renderInlineCommandPalette () {
     return (
-      <div className="react-command-palette">{this.renderAutoSuggest()}</div>
-    );
+      <div className='react-command-palette'>{this.renderAutoSuggest()}</div>
+    )
   }
 
-  render() {
-    const { display } = this.props;
-    let commandPalette;
-    if (display === "inline") {
-      commandPalette = this.renderInlineCommandPalette();
+  render () {
+    const { display } = this.props
+    let commandPalette
+    if (display === 'inline') {
+      commandPalette = this.renderInlineCommandPalette()
     } else {
-      commandPalette = this.renderModalCommandPalette();
+      commandPalette = this.renderModalCommandPalette()
     }
-    return commandPalette;
+    return commandPalette
   }
 }
 
 CommandPalette.defaultProps = {
   alwaysRenderCommands: true,
-  placeholder: "Type a command",
-  hotKeys: "command+shift+p",
-  defaultInputValue: "",
+  placeholder: 'Type a command',
+  hotKeys: 'command+shift+p',
+  defaultInputValue: '',
   header: null,
   maxDisplayed: 7,
   options: fuzzysortOptions,
@@ -379,12 +395,13 @@ CommandPalette.defaultProps = {
   onRequestClose: noop,
   closeOnSelect: false,
   resetInputOnClose: false,
-  display: "modal",
-  reactModalParentSelector: "body",
+  display: 'modal',
+  reactModalParentSelector: 'body',
   renderCommand: null,
   showSpinnerOnSelect: true,
-  theme: defaultTheme
-};
+  theme: defaultTheme,
+  onEnterPressed: noop
+}
 
 CommandPalette.propTypes = {
   /** alwaysRenderCommands a boolean, Set it to true if you'd like to render suggestions
@@ -405,15 +422,15 @@ CommandPalette.propTypes = {
 
   /** maxDisplayed a number between 1 and 500 that determines the maximum number of
    * commands that will be rendered on screen. Defaults to 7 */
-  maxDisplayed(props, propName, componentName) {
-    const { maxDisplayed } = props;
+  maxDisplayed (props, propName, componentName) {
+    const { maxDisplayed } = props
     if (maxDisplayed > 500) {
       return new Error(
         `Invalid prop ${propName} supplied to ${componentName} Cannot be greater than
          500.`
-      );
+      )
     }
-    return null;
+    return null
   },
 
   /** placeholder a string that contains a short text description which is displayed
@@ -458,7 +475,7 @@ CommandPalette.propTypes = {
   /** display one of "modal" or "inline", when set to "modal" the command palette is
    * rendered centered inside a modal. When set to "inline", it is render inline with
    * other page content. Defaults to "modal". */
-  display: PropTypes.oneOf(["modal", "inline"]),
+  display: PropTypes.oneOf(['modal', 'inline']),
 
   /** header a string or a React.ComponentType which provides a helpful description for
    * the usage of the command palette. The component is displayed at the top of the
@@ -507,7 +524,9 @@ CommandPalette.propTypes = {
 
   /** Styles and object that contains a list of key value pairs where the keys map the
    * command palette components to their CSS class names. */
-  theme: PropTypes.object
-};
+  theme: PropTypes.object,
 
-export default CommandPalette;
+  onEnterPressed: PropTypes.func
+}
+
+export default CommandPalette
