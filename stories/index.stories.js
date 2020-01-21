@@ -157,7 +157,7 @@ storiesOf("Command Palette", module)
     ),
     {
       info: {
-        text: `By default, react-command-palette will render the _suggestion.name_ for each command.  However, when passed a custom react component _renderCommand_ will display the command using any template you can imageine. See: https://github.com/asabaylus/react-command-palette/blob/master/examples/sampleAtomCommand.js`
+        text: `By default, react-command-palette will render the _suggestion.name_ for each command.  However, when passed a custom react component _renderCommand_ will display the command using any template you can imagine. See: https://github.com/asabaylus/react-command-palette/blob/master/examples/sampleAtomCommand.js`
       }
     }
   )
@@ -191,10 +191,14 @@ storiesOf("Command Palette", module)
     <CommandPalette
       open
       commands={commands}
-      onChange={value => {
-        console.log(`The input value was changed to: \n
-        ${value}
-        `);
+      onChange={(inputValue, userQuery) => {
+        console.log(
+          `The input value was changed to: \n
+        ${inputValue}\n
+        The user typed:\n
+        ${userQuery}
+        `
+        );
       }}
     />
   ))
@@ -262,6 +266,9 @@ storiesOf("Command Palette", module)
   ))
   .add("with closeOnSelect", () => (
     <CommandPalette commands={commands} closeOnSelect open />
+  ))
+  .add("with resetInputOnClose", () => (
+    <CommandPalette commands={commands} open resetInputOnClose />
   ))
   .add("with custom placeholder", () => (
     <CommandPalette
