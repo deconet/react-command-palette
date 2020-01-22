@@ -122,6 +122,8 @@ class CommandPalette extends React.Component {
 
   componentDidUpdate (prevProps) {
     const { commands } = this.props
+    // console.log('command palette componentDidUpdate.  commandPaletteState: ' + this.props.commandPaletteState)
+
     if (!equal(prevProps.commands, commands)) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({
@@ -140,7 +142,7 @@ class CommandPalette extends React.Component {
       const { key, type } = event
 
       if (key === 'Enter') {
-        return onEnterPressed(newValue, this.getInputOnTextTyped(event, newValue))
+        return onEnterPressed(newValue, this.props.commandStates)
       }
     }
 
@@ -247,8 +249,8 @@ class CommandPalette extends React.Component {
       }
     )
     Mousetrap(this.commandPaletteInput.input).bind(['enter'], () => {
-      console.log('mousetrap hit')
-      onEnterPressed(this.state.value)
+      // console.log('mousetrap hit.  commandState is ', this.props.commandStates)
+      onEnterPressed(this.state.value, this.props.commandStates)
     })
   }
 
