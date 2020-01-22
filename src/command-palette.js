@@ -134,7 +134,7 @@ class CommandPalette extends React.Component {
 
   onChange (event, { newValue }) {
     const { onChange, onEnterPressed } = this.props
-    console.log('onchange')
+    // console.log('onchange')
     this.setState({
       value: newValue
     })
@@ -155,6 +155,7 @@ class CommandPalette extends React.Component {
   }
 
   onSuggestionSelected (event, { suggestion }) {
+    // console.log('onSuggestionSelected', suggestion)
     if (typeof suggestion.command === 'function') {
       // after the command executes display a spinner
       override(
@@ -250,7 +251,14 @@ class CommandPalette extends React.Component {
     )
     Mousetrap(this.commandPaletteInput.input).bind(['enter'], () => {
       // console.log('mousetrap hit.  commandState is ', this.props.commandStates)
-      onEnterPressed(this.state.value, this.props.commandStates)
+      // only call the callback if we are waiting for freeform input
+      // also do not propagate, which prevents react autosuggest from picking a selection
+      if (this.props.commandStates.commandPaletteState === 'waitingForFreeformInput') {
+        onEnterPressed(this.state.value, this.props.commandStates)
+        // clear out the text box
+        this.onChange(null, { newValue: '' })
+        return false
+      }
     })
   }
 
