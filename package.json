@@ -1,5 +1,5 @@
 {
-  "name": "react-command-palette",
+  "name": "@deconet/react-command-palette",
   "version": "0.10.0-0",
   "description": "WAI-ARIA compliant React command palette like the one in Atom",
   "main": "dist/main.js",
